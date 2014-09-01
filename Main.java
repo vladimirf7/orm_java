@@ -13,6 +13,11 @@ public class Main {
 
         Entity.setDatabase(connection);
 
+        Section section2 = new Section(3);
+
+        System.out.println(section2.getColumn("title"));
+        System.out.println(section2.getColumn("title"));
+
     }
 
     private static void initDatabase() throws SQLException, ClassNotFoundException {

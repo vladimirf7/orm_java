@@ -33,9 +33,9 @@ class Category extends Entity {
         super.setParent("section", section.getId());
     }
 
-    public List<Post> getPosts() {
-        return super.getChildren(Post.class);
-    }
+    // public List<Post> getPosts() {
+    //     return super.getChildren(Post.class);
+    // }
 
     public static List<Category> all() {
         return Entity.all(Category.class);

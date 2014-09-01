@@ -29,23 +29,29 @@ public abstract class Entity {
 
     public Entity(Integer id) {
         this.id = id;
-        table = this.getClass().getName().toLowerCase();
+        table = this.getClass().getSimpleName().toLowerCase();
 
-        String query = String.format(SELECT_QUERY, table, table);
         try {
-            Statement stmt = db.createStatement();
-            ResultSet rs = stmt.executeQuery(query);
+            String query = String.format(SELECT_QUERY, table, table);            
+            PreparedStatement stmt = db.prepareStatement(query);
+            stmt.setInt(1, id);
+            ResultSet rs = stmt.executeQuery();
+            ResultSetMetaData rsmd = rs.getMetaData();
 
             while (rs.next()) {
                 int numColumns = rs.getMetaData().getColumnCount();
+                // System.out.println("DEBUG: " + numColumns);
 
                 for (int i = 1; i <= numColumns; i++) {
-                    String name = rs.getColumnName(i);
+                    String name = rsmd.getColumnName(i);
                     Object value = rs.getObject(i);
 
                     fields.put(name, value);
+                    // System.out.println("DEBUG: " + name + " " + value);
                 }
             }
+        } catch (Exception ex) {
+            ex.printStackTrace();
         }
     }
 
@@ -69,16 +75,52 @@ public abstract class Entity {
         return fields.get(table + "_" + name);
     }
 
-    // public final <T extends Entity> T getParent(Class<T> cls) {
-    //     // get parent id from fields as <classname>_id, create and return an instance of class T with that id
-    // }
+    public final <T extends Entity> T getParent(Class<T> cls) {
+        T result = null;
+        int id = (int) fields.get(cls.getSimpleName().toLowerCase() + "_id");
 
-    // public final <T extends Entity> List<T> getChildren(Class<T> cls) {
-    //     // select needed rows and ALL columns from corresponding table
-    //     // convert each row from ResultSet to instance of class T with appropriate id
-    //     // fill each of new instances with column data
-    //     // return list of children instances
-    // }
+        try {
+            Constructor<?> constructor = cls.getConstructor();
+            result = (T) constructor.newInstance(id);
+        } catch (Exception ex) {}
+
+        return result;
+    }
+
+    public final <T extends Entity> List<T> getChildren(Class<T> cls) {
+        // select needed rows and ALL columns from corresponding table
+        // convert each row from ResultSet to instance of class T with appropriate id
+        // fill each of new instances with column data
+        // return list of children instances
+
+        List<T> result = new ArrayList<T>();
+        String childClass = cls.getSimpleName().toLowerCase();
+
+        try {
+            String query = String.format(CHILDREN_QUERY, table, childClass);            
+            PreparedStatement stmt = db.prepareStatement(query);
+            stmt.setString(1, childClass);
+            ResultSet rs = stmt.executeQuery();
+            ResultSetMetaData rsmd = rs.getMetaData();
+
+            while (rs.next()) {
+                int numColumns = rs.getMetaData().getColumnCount();
+                System.out.println("DEBUG: " + numColumns);
+
+                for (int i = 1; i <= numColumns; i++) {
+                    String name = rsmd.getColumnName(i);
+                    Object value = rs.getObject(i);
+
+                    fields.put(name, value);
+                    System.out.println("DEBUG: " + name + " " + value);
+                }
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+
+        return result;
+    }
 
     // public final <T extends Entity> List<T> getSiblings(Class<T> cls) {
     //     // select needed rows and ALL columns from corresponding table
@@ -87,13 +129,13 @@ public abstract class Entity {
     //     // return list of sibling instances
     // }
 
-    // public final void setColumn(String name, Object value) {
-    //     // put a value into fields with <table>_<name> as a key
-    // }
+    public final void setColumn(String name, Object value) {
+        fields.put(table + "_" + name, value);
+    }
 
-    // public final void setParent(String name, Integer id) {
-    //     // put parent id into fields with <name>_<id> as a key
-    // }
+    public final void setParent(String name, Integer id) {
+        fields.put(name + "_id", id);
+    }
 
     // private void load() {
     //     // check, if current object is already loaded
@@ -117,12 +159,24 @@ public abstract class Entity {
     //     // execute either insert or update query, depending on instance id
     // }
 
-    // protected static <T extends Entity> List<T> all(Class<T> cls) {
-    //     // select ALL rows and ALL columns from corresponding table
-    //     // convert each row from ResultSet to instance of class T with appropriate id
-    //     // fill each of new instances with column data
-    //     // aggregate all new instances into a single List<T> and return it
-    // }
+    protected static <T extends Entity> List<T> all(Class<T> cls) {
+        List<T> result = new ArrayList<T>();
+        String table = cls.getSimpleName().toLowerCase();
+
+        String query = String.format(LIST_QUERY, table);
+        try {
+            Statement stmt = db.createStatement();
+            ResultSet rs = stmt.executeQuery(query);
+
+            while (rs.next()) {
+                int id = (int) rs.getObject(table + "_id");
+                T obj = (T) cls.getConstructor().newInstance(id);
+                result.add(obj);
+            }        
+        } catch (Exception ex) {}
+
+        return result;
+    }
 
     // private static Collection<String> genPlaceholders(int size) {
     //     // return a string, consisting of <size> "?" symbols, joined with ", "
