@@ -21,9 +21,9 @@ class Comment extends Entity {
         super.setColumn("text", value);
     }
 
-    public Post getPost() {
-        return super.getParent(Post.class);
-    }
+    // public Post getPost() {
+    //     return super.getParent(Post.class);
+    // }
 
     public void setPost(Integer id) {
         super.setParent("post", id);
@@ -33,9 +33,9 @@ class Comment extends Entity {
         super.setParent("post", post.getId());
     }
 
-    public User getUser() {
-        return super.getParent(User.class);
-    }
+    // public User getUser() {
+    //     return super.getParent(User.class);
+    // }
 
     public void setUser(Integer id) {
         super.setParent("user", id);

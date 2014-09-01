@@ -10,13 +10,24 @@ public class Main {
 
     public static void main(String[] args) throws SQLException, ClassNotFoundException {
         initDatabase();
-
         Entity.setDatabase(connection);
 
-        Section section2 = new Section(3);
+        // Section section1 = new Section(1);
+        // Post post1 = new Post(1);
+        Category cat = new Category();
+        cat.setTitle("Lisp");
+        cat.setSection(1);
+        System.out.println(cat.getId());
+        cat.save();
+        System.out.println(cat.getId());
 
-        System.out.println(section2.getColumn("title"));
-        System.out.println(section2.getColumn("title"));
+        // System.out.println(section1.getColumn("title"));
+        // System.out.println(post1.getColumn("title"));
+        // post1.setTitle("Very interesting content");
+        // post1.save();
+        // System.out.println(post1.getColumn("title"));
+
+
 
     }
 

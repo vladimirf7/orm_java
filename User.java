@@ -37,9 +37,9 @@ class User extends Entity {
         super.setColumn("email", value);
     }
 
-    public List<Comment> getComments() {
-        return super.getChildren(Comment.class);
-    }
+    // public List<Comment> getComments() {
+    //     return super.getChildren(Comment.class);
+    // }
 
     public static List<User> all() {
         return Entity.all(User.class);

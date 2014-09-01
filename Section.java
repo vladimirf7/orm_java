@@ -21,9 +21,9 @@ class Section extends Entity {
         super.setColumn("title", value);
     }
 
-    public List<Category> getCategories() {
-        return super.getChildren(Category.class);
-    }
+    // public List<Category> getCategories() {
+    //     return super.getChildren(Category.class);
+    // }
 
     public static List<Section> all() {
         return Entity.all(Section.class);

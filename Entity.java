@@ -24,35 +24,12 @@ public abstract class Entity {
     protected Map<String, Object> fields = new HashMap<String, Object>();
 
     public Entity() {
-        
+        this(0);
     }
 
     public Entity(Integer id) {
         this.id = id;
-        table = this.getClass().getSimpleName().toLowerCase();
-
-        try {
-            String query = String.format(SELECT_QUERY, table, table);            
-            PreparedStatement stmt = db.prepareStatement(query);
-            stmt.setInt(1, id);
-            ResultSet rs = stmt.executeQuery();
-            ResultSetMetaData rsmd = rs.getMetaData();
-
-            while (rs.next()) {
-                int numColumns = rs.getMetaData().getColumnCount();
-                // System.out.println("DEBUG: " + numColumns);
-
-                for (int i = 1; i <= numColumns; i++) {
-                    String name = rsmd.getColumnName(i);
-                    Object value = rs.getObject(i);
-
-                    fields.put(name, value);
-                    // System.out.println("DEBUG: " + name + " " + value);
-                }
-            }
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
+        table = this.getClass().getSimpleName().toLowerCase();        
     }
 
     public static final void setDatabase(Connection connection) {
@@ -72,55 +49,51 @@ public abstract class Entity {
     }
 
     public final Object getColumn(String name) {
+        load();
         return fields.get(table + "_" + name);
     }
 
-    public final <T extends Entity> T getParent(Class<T> cls) {
-        T result = null;
-        int id = (int) fields.get(cls.getSimpleName().toLowerCase() + "_id");
+    // public final <T extends Entity> T getParent(Class<T> cls) {
+    //     T result = null;
+    //     int id = (int) fields.get(cls.getSimpleName().toLowerCase() + "_id");
 
-        try {
-            Constructor<?> constructor = cls.getConstructor();
-            result = (T) constructor.newInstance(id);
-        } catch (Exception ex) {}
+    //     try {
+    //         Constructor<?> constructor = cls.getConstructor();
+    //         result = (T) constructor.newInstance(id);
+    //     } catch (Exception ex) {}
 
-        return result;
-    }
+    //     return result;
+    // }
 
-    public final <T extends Entity> List<T> getChildren(Class<T> cls) {
-        // select needed rows and ALL columns from corresponding table
-        // convert each row from ResultSet to instance of class T with appropriate id
-        // fill each of new instances with column data
-        // return list of children instances
+    // public final <T extends Entity> List<T> getChildren(Class<T> cls) {
+    //     List<T> result = new ArrayList<T>();
+    //     String childClass = cls.getSimpleName().toLowerCase();
 
-        List<T> result = new ArrayList<T>();
-        String childClass = cls.getSimpleName().toLowerCase();
+    //     try {
+    //         String query = String.format(CHILDREN_QUERY, table, childClass);            
+    //         PreparedStatement stmt = db.prepareStatement(query);
+    //         stmt.setString(1, childClass);
+    //         ResultSet rs = stmt.executeQuery();
+    //         ResultSetMetaData rsmd = rs.getMetaData();
 
-        try {
-            String query = String.format(CHILDREN_QUERY, table, childClass);            
-            PreparedStatement stmt = db.prepareStatement(query);
-            stmt.setString(1, childClass);
-            ResultSet rs = stmt.executeQuery();
-            ResultSetMetaData rsmd = rs.getMetaData();
+    //         while (rs.next()) {
+    //             int numColumns = rs.getMetaData().getColumnCount();
+    //             System.out.println("DEBUG: " + numColumns);
 
-            while (rs.next()) {
-                int numColumns = rs.getMetaData().getColumnCount();
-                System.out.println("DEBUG: " + numColumns);
+    //             for (int i = 1; i <= numColumns; i++) {
+    //                 String name = rsmd.getColumnName(i);
+    //                 Object value = rs.getObject(i);
 
-                for (int i = 1; i <= numColumns; i++) {
-                    String name = rsmd.getColumnName(i);
-                    Object value = rs.getObject(i);
+    //                 fields.put(name, value);
+    //                 System.out.println("DEBUG: " + name + " " + value);
+    //             }
+    //         }
+    //     } catch (Exception ex) {
+    //         ex.printStackTrace();
+    //     }
 
-                    fields.put(name, value);
-                    System.out.println("DEBUG: " + name + " " + value);
-                }
-            }
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
-
-        return result;
-    }
+    //     return result;
+    // }
 
     // public final <T extends Entity> List<T> getSiblings(Class<T> cls) {
     //     // select needed rows and ALL columns from corresponding table
@@ -137,27 +110,86 @@ public abstract class Entity {
         fields.put(name + "_id", id);
     }
 
-    // private void load() {
-    //     // check, if current object is already loaded
-    //     // get a single row from corresponding table by id
-    //     // store columns as object fields with unchanged column names as keys
-    // }
+    private void load() {
+        if (isLoaded) return;
+        try {
+            String query = String.format(SELECT_QUERY, table);            
+            PreparedStatement stmt = db.prepareStatement(query);
+            stmt.setInt(1, id);
+            ResultSet rs = stmt.executeQuery();
+            ResultSetMetaData rsmd = rs.getMetaData();
 
-    // private void insert() throws SQLException {
-    //     // execute an insert query, built from fields keys and values
-    // }
+            while (rs.next()) {
+                int numColumns = rs.getMetaData().getColumnCount();
+                // System.out.println("DEBUG: " + numColumns);
 
-    // private void update() throws SQLException {
-    //     // execute an update query, built from fields keys and values
-    // }
+                for (int i = 1; i <= numColumns; i++) {
+                    String name = rsmd.getColumnName(i);
+                    Object value = rs.getObject(i);
+
+                    fields.put(name, value);                    
+                    // System.out.println("DEBUG: " + name + " " + value);
+                }
+                isLoaded = true;
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    private void insert() throws SQLException {
+        // execute an insert query, built from fields keys and values
+        // "INSERT INTO \"%1$s\" (%2$s) VALUES (%3$s) RETURNING %1$s_id";
+        String fieldNames = new String();
+        String fieldValues = new String();
+
+        for (Map.Entry<String, Object> entry : fields.entrySet()) {
+            fieldNames += entry.getKey() + ", ";
+            fieldValues += "'" + entry.getValue() + "', ";
+        }
+        fieldNames = fieldNames.substring(0, fieldNames.length() - 2);
+        fieldValues = fieldValues.substring(0, fieldValues.length() - 2);
+        String query = String.format(INSERT_QUERY, table, fieldNames, fieldValues);
+        PreparedStatement stmt = db.prepareStatement(query);
+        // System.out.println("DEBUG insert(): " + stmt);
+        try {
+            ResultSet rs = stmt.executeQuery();
+            int id = rs.getInt(table + "_id");
+            System.out.println("DEBUG id: " + id);
+            this.id = id;
+        } catch (SQLException ex) {}        
+    }
+
+    private void update() throws SQLException {
+        try {
+            for (Map.Entry<String, Object> entry : fields.entrySet()) {
+                String name = entry.getKey();
+                Object value = entry.getValue();
+                String setStr = name + " = '" + value + "'";
+                String query = String.format(UPDATE_QUERY, table, setStr);
+                PreparedStatement stmt = db.prepareStatement(query);
+                System.out.println("DEBUG 1: " + setStr);
+                stmt.setInt(1, this.id);
+                stmt.executeUpdate();   
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+    }
 
     // public final void delete() throws SQLException {
     //     // execute a delete query with current instance id
     // }
 
-    // public final void save() throws SQLException {
-    //     // execute either insert or update query, depending on instance id
-    // }
+    public final void save() throws SQLException {
+        // execute either insert or update query, depending on instance id
+        if (id == 0) {
+            insert();
+        } else {
+            update();
+        }
+        
+    }
 
     protected static <T extends Entity> List<T> all(Class<T> cls) {
         List<T> result = new ArrayList<T>();
@@ -194,7 +226,7 @@ public abstract class Entity {
     //     // return table name using format <table>__<table>
     // }
 
-    private java.util.Date getDate(String column) {        
+    private java.util.Date getDate(String column) {
         String strDate = (String) fields.get(table + column);
         java.util.Date date = null;
         SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");

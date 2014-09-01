@@ -21,9 +21,9 @@ class Category extends Entity {
         super.setColumn("title", value);
     }
 
-    public Section getSection() {
-        return super.getParent(Section.class);
-    }
+    // public Section getSection() {
+    //     return super.getParent(Section.class);
+    // }
 
     public void setSection(Integer id) {
         super.setParent("section", id);
