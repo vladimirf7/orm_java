@@ -1,8 +1,8 @@
-// package junior.databases.homework;
-package junior.databases.orm;
+package junior.databases.homework;
+// package junior.databases.orm;
 
-// import junior.databases.homework.*;
-import junior.databases.orm.*;
+import junior.databases.homework.*;
+// import junior.databases.orm.*;
 import java.sql.*;
 
 public class Main {
