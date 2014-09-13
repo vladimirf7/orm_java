@@ -41,10 +41,14 @@ public abstract class Entity {
     }
 
     public final java.util.Date getCreated() {
+        if (isModified) load();
+
         return getDate("_created");
     }
 
     public final java.util.Date getUpdated() {
+        if (isModified) load();
+        
         return getDate("_updated");
     }
 
@@ -121,14 +125,12 @@ public abstract class Entity {
 
             while (rs.next()) {
                 int numColumns = rs.getMetaData().getColumnCount();
-                // System.out.println("DEBUG: " + numColumns);
 
                 for (int i = 1; i <= numColumns; i++) {
                     String name = rsmd.getColumnName(i);
                     Object value = rs.getObject(i);
 
                     fields.put(name, value);                    
-                    // System.out.println("DEBUG: " + name + " " + value);
                 }
                 isLoaded = true;
             }
@@ -138,10 +140,12 @@ public abstract class Entity {
     }
 
     private void insert() throws SQLException {
-        // execute an insert query, built from fields keys and values
-        // "INSERT INTO \"%1$s\" (%2$s) VALUES (%3$s) RETURNING %1$s_id";
         String fieldNames = new String();
         String fieldValues = new String();
+        String query;
+        PreparedStatement stmt;
+        ResultSet rs;
+        int id;
 
         for (Map.Entry<String, Object> entry : fields.entrySet()) {
             fieldNames += entry.getKey() + ", ";
@@ -149,40 +153,60 @@ public abstract class Entity {
         }
         fieldNames = fieldNames.substring(0, fieldNames.length() - 2);
         fieldValues = fieldValues.substring(0, fieldValues.length() - 2);
-        String query = String.format(INSERT_QUERY, table, fieldNames, fieldValues);
-        PreparedStatement stmt = db.prepareStatement(query);
-        // System.out.println("DEBUG insert(): " + stmt);
-        try {
-            ResultSet rs = stmt.executeQuery();
-            int id = rs.getInt(table + "_id");
-            System.out.println("DEBUG id: " + id);
+        query = String.format(INSERT_QUERY, table, fieldNames, fieldValues);
+        stmt = db.prepareStatement(query);
+        rs = stmt.executeQuery();
+
+        while (rs.next()) {
+            id = rs.getInt(table + "_id");
             this.id = id;
-        } catch (SQLException ex) {}        
+        }
+        isModified = true;
+        isLoaded = false;
     }
 
     private void update() throws SQLException {
+        String name;
+        Object value;
+        String setStr;
+        String query;
+        PreparedStatement stmt;
+
         try {
             for (Map.Entry<String, Object> entry : fields.entrySet()) {
-                String name = entry.getKey();
-                Object value = entry.getValue();
-                String setStr = name + " = '" + value + "'";
-                String query = String.format(UPDATE_QUERY, table, setStr);
-                PreparedStatement stmt = db.prepareStatement(query);
-                System.out.println("DEBUG 1: " + setStr);
+                name = entry.getKey();
+                value = entry.getValue();
+                setStr = name + " = '" + value + "'";
+                query = String.format(UPDATE_QUERY, table, setStr);
+                stmt = db.prepareStatement(query);
                 stmt.setInt(1, this.id);
                 stmt.executeUpdate();   
             }
         } catch (Exception ex) {
             ex.printStackTrace();
         }
+        isModified = true;
+        isLoaded = false;
     }
 
-    // public final void delete() throws SQLException {
-    //     // execute a delete query with current instance id
-    // }
+    public final void delete() throws SQLException {
+        if (this.id == 0) throw new RuntimeException("Unable to delete item with id == 0");
+
+        try {
+                String query = String.format(DELETE_QUERY, table);
+                PreparedStatement stmt = db.prepareStatement(query);
+                stmt.setInt(1, this.id);
+                // System.out.println("DEBUG 1: " + stmt);
+                stmt.executeUpdate();
+                this.id = 0;
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        isModified = true;
+        isLoaded = false;
+    }
 
     public final void save() throws SQLException {
-        // execute either insert or update query, depending on instance id
         if (id == 0) {
             insert();
         } else {
@@ -194,18 +218,24 @@ public abstract class Entity {
     protected static <T extends Entity> List<T> all(Class<T> cls) {
         List<T> result = new ArrayList<T>();
         String table = cls.getSimpleName().toLowerCase();
+        Statement stmt;
+        ResultSet rs;
+        int id;
+        T obj;
 
         String query = String.format(LIST_QUERY, table);
         try {
-            Statement stmt = db.createStatement();
-            ResultSet rs = stmt.executeQuery(query);
+            stmt = db.createStatement();
+            rs = stmt.executeQuery(query);
 
             while (rs.next()) {
-                int id = (int) rs.getObject(table + "_id");
-                T obj = (T) cls.getConstructor().newInstance(id);
+                id = (int) rs.getObject(table + "_id");
+                obj = (T) cls.getConstructor(Integer.class).newInstance(id);
                 result.add(obj);
             }        
-        } catch (Exception ex) {}
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
 
         return result;
     }
@@ -227,16 +257,16 @@ public abstract class Entity {
     // }
 
     private java.util.Date getDate(String column) {
-        String strDate = (String) fields.get(table + column);
+        int intDate = (int) fields.get(table + column);
         java.util.Date date = null;
         SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        // 2014-08-29 16:20:41.032
 
-        if (strDate != null && !strDate.isEmpty()) {
-            try {
-                date = formatter.parse(strDate);
-            } catch (Exception e) {}
+        try {
+            date = new java.util.Date(intDate * 1000L);
+        } catch (Exception e) {
+            e.printStackTrace();
         }
+
         return date;
     }
 
