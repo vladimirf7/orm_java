@@ -402,17 +402,10 @@ ALTER TABLE ONLY "user" ALTER COLUMN user_id SET DEFAULT nextval('user_user_id_s
 --
 
 COPY category (category_id, category_title, category_created, category_updated, section_id) FROM stdin;
-1	Java	1409589553	1409589553	1
-2	C++	1409589553	1409589553	1
-3	PHP	1409589553	1409589553	1
-4	Python	1409589554	1409589554	1
-5	Lisp	1409605237	1409605237	1
-6	Lisp	1409605308	1409605308	1
-7	Lisp	1409605627	1409605627	1
-8	Lisp	1409605659	1409605659	1
-9	Lisp	1409605734	1409605734	1
-10	Lisp	1409605744	1409605744	1
-11	Lisp	1409605769	1409605769	1
+1	Java	1410870536	1410870536	1
+2	C++	1410870536	1410870536	1
+3	PHP	1410870536	1410870536	1
+4	Python	1410870536	1410870536	1
 \.
 
 
@@ -420,7 +413,7 @@ COPY category (category_id, category_title, category_created, category_updated, 
 -- Name: category_category_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('category_category_id_seq', 11, true);
+SELECT pg_catalog.setval('category_category_id_seq', 4, true);
 
 
 --
@@ -443,13 +436,13 @@ SELECT pg_catalog.setval('comment_comment_id_seq', 1, false);
 --
 
 COPY post (post_id, post_content, post_title, post_created, post_updated, category_id) FROM stdin;
-2	This article is the first in a multi-part series from the author of Sams Teach Yourself Scratch 2.0 in 24 Hours in which we create an online game by using the Scratch 2.0 educational programming language.	Building a Game from Scratch, Part 1: Setting the Foundation	1409590142	1409590142	1
-3	C has a rich variety of math operators that you can use to manipulate your data. In this chapter from Programming in C, 4th Edition, Stephen G. Kochan covers the int, float, double, char, and _Bool data types, modifying data types with short, long, and long long, the rules for naming variables, basic math operators and arithmetic expressions, and type casting.	How to Work with Variables, Data Types, and Arithmetic Expressions in the C Programming Language	1409590142	1409590142	2
-4	In Part 2 of a two-part series, programming expert Jesse Smith continues his discussion of Angular JS by exploring modules and services.	Angular JS Fundamental Concepts for Building Web Applications: Part 2	1409590142	1409590142	3
-5	To mark the release of the official multi-format ebook of Donald Knuths Art of Computer Programming, Volume 3: Sorting and Searching, 2nd Edition, we are pleased to make available the preface.	Preface to The Art of Computer Programming, Volume 3: Sorting and Searching, 2nd Edition	1409590142	1409590142	3
-6	Stephan G. Kochan provides some background about the C programming language and describes the contents and organization of the fourth edition of his book, Programming in C.	Introduction to Programming in PHP, Fourth Edition	1409590142	1409590142	3
-7	Dave Hendricksen introduces his book, 12 More Essential Skills for Software Architects; learn the three sets of skills that will have the greatest impact on your ability to succeed and ascend.	Preface to 12 More Essential Skills for Software Architects	1409590145	1409590145	4
-1	This chapter from 12 More Essential Skills for Software Architects unveils one of the essential skills needed by a software architect: the ability to identify, assess, and infuse new and potentially disruptive technologies in a business-centric fashion.	Very interesting content	1409589937	1409603696	1
+1	This chapter from 12 More Essential Skills for Software Architects unveils one of the essential skills needed by a software architect: the ability to identify, assess, and infuse new and potentially disruptive technologies in a business-centric fashion.	12 More Essential Skills for Software Architects: Technology Innovation	1410870536	1410870536	1
+2	This article is the first in a multi-part series from the author of Sams Teach Yourself Scratch 2.0 in 24 Hours in which we create an online game by using the Scratch 2.0 educational programming language.	Building a Game from Scratch, Part 1: Setting the Foundation	1410870536	1410870536	1
+3	C has a rich variety of math operators that you can use to manipulate your data. In this chapter from Programming in C, 4th Edition, Stephen G. Kochan covers the int, float, double, char, and _Bool data types, modifying data types with short, long, and long long, the rules for naming variables, basic math operators and arithmetic expressions, and type casting.	How to Work with Variables, Data Types, and Arithmetic Expressions in the C Programming Language	1410870536	1410870536	2
+4	In Part 2 of a two-part series, programming expert Jesse Smith continues his discussion of Angular JS by exploring modules and services.	Angular JS Fundamental Concepts for Building Web Applications: Part 2	1410870536	1410870536	3
+5	To mark the release of the official multi-format ebook of Donald Knuths Art of Computer Programming, Volume 3: Sorting and Searching, 2nd Edition, we are pleased to make available the preface.	Preface to The Art of Computer Programming, Volume 3: Sorting and Searching, 2nd Edition	1410870536	1410870536	3
+6	Stephan G. Kochan provides some background about the C programming language and describes the contents and organization of the fourth edition of his book, Programming in C.	Introduction to Programming in PHP, Fourth Edition	1410870536	1410870536	3
+7	Dave Hendricksen introduces his book, 12 More Essential Skills for Software Architects; learn the three sets of skills that will have the greatest impact on your ability to succeed and ascend.	Preface to 12 More Essential Skills for Software Architects	1410870536	1410870536	4
 \.
 
 
@@ -473,7 +466,7 @@ SELECT pg_catalog.setval('post_post_id_seq', 7, true);
 --
 
 COPY section (section_id, section_title, section_created, section_updated) FROM stdin;
-1	Programming	1409589366	1409589366
+1	Programming	1410870536	1410870536
 \.
 
 
@@ -489,12 +482,12 @@ SELECT pg_catalog.setval('section_section_id_seq', 1, true);
 --
 
 COPY tag (tag_id, tag_name, tag_created, tag_updated) FROM stdin;
-1	Beginner	1409590312	1409590312
-2	Intermediate	1409590312	1409590312
-3	Advanced	1409590313	1409590313
-4	Math	1409590347	1409590347
-5	Trick	1409590347	1409590347
-6	New feature	1409590348	1409590348
+1	Beginner	1410870536	1410870536
+2	Intermediate	1410870536	1410870536
+3	Advanced	1410870536	1410870536
+4	Math	1410870536	1410870536
+5	Trick	1410870536	1410870536
+6	New feature	1410870536	1410870536
 \.
 
 

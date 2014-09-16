@@ -50,6 +50,8 @@ CREATE TABLE "comment" (
     "comment_updated" INTEGER NOT NULL DEFAULT cast(extract(epoch from now()) AS INTEGER)
 );
 
+
+
 ALTER TABLE "post__tag"
     ADD CONSTRAINT "fk_post__tag_post_id" FOREIGN KEY ("post_id") REFERENCES "post" ("post_id");
 
@@ -65,9 +67,10 @@ ALTER TABLE "comment" ADD "user_id" INTEGER NOT NULL,
 ALTER TABLE "comment" ADD "post_id" INTEGER NOT NULL,
     ADD CONSTRAINT "fk_comment_post_id" FOREIGN KEY ("post_id") REFERENCES "post" ("post_id");
 
-
 ALTER TABLE "category" ADD "section_id" INTEGER NOT NULL,
     ADD CONSTRAINT "fk_category_section_id" FOREIGN KEY ("section_id") REFERENCES "section" ("section_id");
+
+
 
 CREATE OR REPLACE FUNCTION update_section_timestamp()
 RETURNS TRIGGER AS $$
