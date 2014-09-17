@@ -28,7 +28,9 @@ public abstract class Entity {
     }
 
     public Entity(Integer id) {
-        this.id = id;
+        if (id != null) {
+            this.id = id;
+        }
         table = this.getClass().getSimpleName().toLowerCase();        
     }
 
@@ -91,20 +93,26 @@ public abstract class Entity {
     }
 
     private void insert() throws SQLException {
-        String fieldNames = new String();
-        String fieldValues = new String();
+        StringBuilder fieldNames = new StringBuilder();
+        StringBuilder fieldValues = new StringBuilder();
         String query;
         PreparedStatement stmt;
         ResultSet rs;
         int id;
+        List<String> keys = new ArrayList<String>(fields.keySet());
+        int keysSize = keys.size() - 1;
 
-        for (Map.Entry<String, Object> entry : fields.entrySet()) {
-            fieldNames += entry.getKey() + ", ";
-            fieldValues += "'" + entry.getValue() + "', ";
+        for (int i = 0; i < keysSize; i++) {
+            String name = keys.get(i);
+            Object value = fields.get(name);
+
+            fieldNames.append(name + ", ");
+            fieldValues.append("'" + value + "', ");
         }
-        fieldNames = fieldNames.substring(0, fieldNames.length() - 3);
-        fieldValues = fieldValues.substring(0, fieldValues.length() - 55);
-        query = String.format(INSERT_QUERY, table, fieldNames, fieldValues);
+        fieldNames.append(keys.get(keysSize));
+        fieldValues.append(fields.get(keys.get(keysSize)));
+
+        query = String.format(INSERT_QUERY, table, fieldNames.toString(), fieldValues.toString());
         stmt = db.prepareStatement(query);
         rs = stmt.executeQuery();
 

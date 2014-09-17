@@ -1,5 +1,5 @@
-package junior.databases.homework;
-// package junior.databases.orm;
+// package junior.databases.homework;
+package junior.databases.orm;
 
 import java.util.List;
 import java.sql.SQLException;
