@@ -102,8 +102,8 @@ public abstract class Entity {
             fieldNames += entry.getKey() + ", ";
             fieldValues += "'" + entry.getValue() + "', ";
         }
-        fieldNames = fieldNames.substring(0, fieldNames.length() - 2);
-        fieldValues = fieldValues.substring(0, fieldValues.length() - 2);
+        fieldNames = fieldNames.substring(0, fieldNames.length() - 3);
+        fieldValues = fieldValues.substring(0, fieldValues.length() - 55);
         query = String.format(INSERT_QUERY, table, fieldNames, fieldValues);
         stmt = db.prepareStatement(query);
         rs = stmt.executeQuery();
