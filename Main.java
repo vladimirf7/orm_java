@@ -10,7 +10,7 @@ public class Main {
 
     public static void main(String[] args) throws SQLException, ClassNotFoundException {
         initDatabase();
-        Entity.setDatabase(null);        
+        Entity.setDatabase(connection);        
 
         Category category = new Category();
         category.setTitle("Newest Category A");
