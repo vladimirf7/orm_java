@@ -4,6 +4,7 @@ package junior.databases.orm;
 import java.util.*;
 import java.sql.*;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.text.SimpleDateFormat;
 
 public abstract class Entity {
@@ -31,10 +32,15 @@ public abstract class Entity {
         if (id != null) {
             this.id = id;
         }
+
         table = this.getClass().getSimpleName().toLowerCase();        
     }
 
     public static final void setDatabase(Connection connection) {
+        if (connection == null) {
+            throw new NullPointerException();
+        }
+
         db = connection;
     }
 
@@ -43,13 +49,17 @@ public abstract class Entity {
     }
 
     public final java.util.Date getCreated() {
-        if (isModified) load();
+        if (isModified) {
+            load();
+        }
 
         return getDate("_created");
     }
 
     public final java.util.Date getUpdated() {
-        if (isModified) load();
+        if (isModified) {
+            load();
+        }
         
         return getDate("_updated");
     }
@@ -68,7 +78,10 @@ public abstract class Entity {
     }
 
     private void load() {
-        if (isLoaded) return;
+        if (isLoaded) {
+            return;
+        }
+
         try {
             String query = String.format(SELECT_QUERY, table);            
             PreparedStatement stmt = db.prepareStatement(query);
@@ -84,23 +97,22 @@ public abstract class Entity {
                     Object value = rs.getObject(i);
 
                     fields.put(name, value);                    
-                }
-                isLoaded = true;
+                }                
             }
-        } catch (Exception ex) {
+            isLoaded = true;
+        } catch (SQLException ex) {
             ex.printStackTrace();
         }
     }
 
     private void insert() throws SQLException {
+        List<String> keys = new ArrayList<String>(fields.keySet());
+        int keysSize = keys.size() - 1;
         StringBuilder fieldNames = new StringBuilder();
         StringBuilder fieldValues = new StringBuilder();
         String query;
         PreparedStatement stmt;
         ResultSet rs;
-        int id;
-        List<String> keys = new ArrayList<String>(fields.keySet());
-        int keysSize = keys.size() - 1;
 
         for (int i = 0; i < keysSize; i++) {
             String name = keys.get(i);
@@ -117,45 +129,42 @@ public abstract class Entity {
         rs = stmt.executeQuery();
 
         while (rs.next()) {
-            id = rs.getInt(table + "_id");
-            this.id = id;
+            this.id = rs.getInt(table + "_id");
         }
+
         isModified = true;
         isLoaded = false;
     }
 
     private void update() throws SQLException {
-        String name;
-        Object value;
+        PreparedStatement updateStmt;
         String setStr;
         String query;
-        PreparedStatement stmt;
 
-        try {
-            for (Map.Entry<String, Object> entry : fields.entrySet()) {
-                name = entry.getKey();
-                value = entry.getValue();
-                setStr = name + " = '" + value + "'";
-                query = String.format(UPDATE_QUERY, table, setStr);
-                stmt = db.prepareStatement(query);
-                stmt.setInt(1, this.id);
-                stmt.executeUpdate();   
-            }
-        } catch (Exception ex) {
-            ex.printStackTrace();
+        for (Map.Entry<String, Object> e : fields.entrySet()) {
+            setStr = e.getKey() + " = ?";
+            query = String.format(UPDATE_QUERY, table, setStr);
+            updateStmt = db.prepareStatement(query);
+            updateStmt.setString(1, e.getValue().toString());
+            updateStmt.setInt(2, this.id);
+            updateStmt.executeUpdate();
         }
+
         isModified = true;
         isLoaded = false;
     }
 
     public final void delete() throws SQLException {
-        if (this.id == 0) throw new RuntimeException("Unable to delete item with id == 0");
+        if (this.id == 0) {
+            throw new RuntimeException("Unable to delete item with id == 0");
+        }
 
         String query = String.format(DELETE_QUERY, table);
         PreparedStatement stmt = db.prepareStatement(query);
 
         stmt.setInt(1, this.id);
         stmt.executeUpdate();
+
         this.id = 0;
         isModified = true;
         isLoaded = false;
@@ -166,8 +175,7 @@ public abstract class Entity {
             insert();
         } else {
             update();
-        }
-        
+        }        
     }
 
     protected static <T extends Entity> List<T> all(Class<T> cls) {
@@ -175,20 +183,21 @@ public abstract class Entity {
         String table = cls.getSimpleName().toLowerCase();
         Statement stmt;
         ResultSet rs;
-        int id;
         T obj;
 
-        String query = String.format(LIST_QUERY, table);
         try {
+            Constructor<T> ctor = cls.getConstructor(Integer.class);
+            String query = String.format(LIST_QUERY, table);
+
             stmt = db.createStatement();
             rs = stmt.executeQuery(query);
 
             while (rs.next()) {
-                id = (int) rs.getObject(table + "_id");
-                obj = (T) cls.getConstructor(Integer.class).newInstance(id);
+                obj = ctor.newInstance(rs.getInt(table + "_id"));
                 result.add(obj);
             }        
-        } catch (Exception ex) {
+        } catch (NoSuchMethodException | SQLException | InstantiationException |
+                 IllegalAccessException | InvocationTargetException ex) {
             ex.printStackTrace();
         }
 
@@ -197,16 +206,9 @@ public abstract class Entity {
 
     private java.util.Date getDate(String column) {
         int intDate = (int) fields.get(table + column);
-        java.util.Date date = null;
         SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-
-        try {
-            date = new java.util.Date(intDate * 1000L);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        java.util.Date date = new java.util.Date(intDate * 1000L);
 
         return date;
     }
-
 }

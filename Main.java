@@ -12,14 +12,21 @@ public class Main {
         initDatabase();
         Entity.setDatabase(connection);        
 
-        Category category = new Category();
-        category.setTitle("Lisp");
-        category.setSection(1);
-        System.out.println(category.getId());
-        category.save();
-        System.out.println(category.getCreated());
+        // Category category = new Category();
+        // category.setTitle("Lisp");
+        // category.setSection(1);
+        // System.out.println(category.getId());
+        // category.save();
+        // System.out.println(category.getCreated());
 
-        // Category category = new Category(2);
+        Category category = new Category(2);
+        System.out.println(category.getId() + " " +
+                           category.getTitle() + " " +
+                           category.getCreated());
+
+        // Category category = new Category(3);
+        // category.setTitle("PHP shall not pass!");
+        // category.save();
         // System.out.println(category.getId() + " " +
         //                    category.getTitle() + " " +
         //                    category.getCreated());
