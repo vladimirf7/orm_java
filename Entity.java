@@ -21,7 +21,7 @@ public abstract class Entity {
     protected boolean isLoaded = false;
     protected boolean isModified = false;
     private String table = null;
-    private int id = 0;
+    private Integer id = null;
     protected Map<String, Object> fields = new HashMap<String, Object>();
 
     public Entity() {
@@ -29,10 +29,7 @@ public abstract class Entity {
     }
 
     public Entity(Integer id) {
-        if (id != null) {
-            this.id = id;
-        }
-
+        this.id = id;
         table = this.getClass().getSimpleName().toLowerCase();        
     }
 
@@ -49,23 +46,20 @@ public abstract class Entity {
     }
 
     public final java.util.Date getCreated() {
-        if (isModified) {
-            load();
-        }
+        load();
 
         return getDate("_created");
     }
 
     public final java.util.Date getUpdated() {
-        if (isModified) {
-            load();
-        }
+        load();
         
         return getDate("_updated");
     }
 
     public final Object getColumn(String name) {
         load();
+
         return fields.get(table + "_" + name);
     }    
 
@@ -87,13 +81,13 @@ public abstract class Entity {
             PreparedStatement stmt = db.prepareStatement(query);
             stmt.setInt(1, id);
             ResultSet rs = stmt.executeQuery();
-            ResultSetMetaData rsmd = rs.getMetaData();
+            ResultSetMetaData metaData = rs.getMetaData();
 
             while (rs.next()) {
                 int numColumns = rs.getMetaData().getColumnCount();
 
                 for (int i = 1; i <= numColumns; i++) {
-                    String name = rsmd.getColumnName(i);
+                    String name = metaData.getColumnName(i);
                     Object value = rs.getObject(i);
 
                     fields.put(name, value);                    
@@ -106,27 +100,20 @@ public abstract class Entity {
     }
 
     private void insert() throws SQLException {
-        List<String> keys = new ArrayList<String>(fields.keySet());
-        int keysSize = keys.size() - 1;
-        StringBuilder fieldNames = new StringBuilder();
-        StringBuilder fieldValues = new StringBuilder();
-        String query;
-        PreparedStatement stmt;
-        ResultSet rs;
+        Collection<String> keys = fields.keySet();
+        Collection<Object> values = fields.values();
+        int placeholderIndex = 1;
+        String placeholders = join(genPlaceholders(values.size()));
+        String query = String.format(INSERT_QUERY, table, join(keys), placeholders);
+        PreparedStatement stmt = db.prepareStatement(query);
+        ResultSet rs = null;
 
-        for (int i = 0; i < keysSize; i++) {
-            String name = keys.get(i);
-            Object value = fields.get(name);
-
-            fieldNames.append(name + ", ");
-            fieldValues.append("'" + value + "', ");
+        for (Object obj : values) {
+            stmt.setString(placeholderIndex, obj.toString());
+            placeholderIndex += 1;
         }
-        fieldNames.append(keys.get(keysSize));
-        fieldValues.append(fields.get(keys.get(keysSize)));
-
-        query = String.format(INSERT_QUERY, table, fieldNames.toString(), fieldValues.toString());
-        stmt = db.prepareStatement(query);
-        rs = stmt.executeQuery();
+        rs = stmt.executeQuery();        
+        // System.out.println("DEBUG: prepared statement: " + stmt);
 
         while (rs.next()) {
             this.id = rs.getInt(table + "_id");
@@ -171,7 +158,7 @@ public abstract class Entity {
     }
 
     public final void save() throws SQLException {
-        if (id == 0) {
+        if (id == null) {
             insert();
         } else {
             update();
@@ -205,10 +192,43 @@ public abstract class Entity {
     }
 
     private java.util.Date getDate(String column) {
-        int intDate = (int) fields.get(table + column);
-        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        java.util.Date date = new java.util.Date(intDate * 1000L);
+        // int intDate = (int) fields.get(table + column);
+        // SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        // java.util.Date date = new java.util.Date(intDate * 1000L);
+
+        java.util.Date date = (java.sql.Timestamp)fields.get(table + column);
 
         return date;
+    }
+
+    private static Collection<String> genPlaceholders(int size) {
+        return genPlaceholders(size, "?");
+    }
+
+    private static Collection<String> genPlaceholders(int size, String placeholder) {
+        Collection<String> result = new ArrayList<String>();
+
+        for (int i = 1; i <= size; i++) {
+            result.add(placeholder);
+        }
+
+        return result;
+    }
+
+    private static String join(Collection<String> sequence) {
+        return join(sequence, ", ");
+    }
+
+    private static String join(Collection<String> sequence, String glue) {
+        StringBuilder sb = new StringBuilder();
+        String[] array = sequence.toArray(new String[0]);
+        int length = array.length - 1;
+
+        for (int i = 0; i < length; i++) {
+            sb.append(array[i] + glue);
+        }
+        sb.append(array[length]);
+
+        return sb.toString();
     }
 }
